@@ -1,28 +1,66 @@
 import express from 'express';
-import mongoose from 'mongoose';
-import link from './data.js';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const app = express();
 app.use(express.json());
 
-const users = [];
 
-app.get('/users', (req, res) => {
+app.get('/users', async (req, res) => {
+
+  
+  const users = await prisma.user.findMany();
+
+
   res.status(200).json(users);
 });
 
 
-app.post('/users', (req, res) => {
-  const { name, age, nickName } = req.body;
+app.post('/users', async (req, res) => {
 
-  users.push({ name, age, nickName });
+  await prisma.user.create({
+    data: {
+      name: req.body.name,
+      email: req.body.email,
+      age: req.body.age,
+    },
+  });
 
-  res.status(201).json({ ok: true });
+  res.status(201).json(req.body);
 });
 
 
-mongoose.connect(link)
-  .then(() => console.log('Conectado ao banco de dados!'))
-  .catch(() => console.log('Erro ao conectar ao banco de dados!'));
+app.put('/users/:id', async (req, res) => {
+
+  await prisma.user.update({
+    where:{
+      id: req.params.id,
+    },
+    data: {
+      name: req.body.name,
+      email: req.body.email,
+      age: req.body.age,
+    },
+  });
+
+  res.status(201).json(req.body);
+});
+
+
+app.delete('/users/:id', async (req, res) => {
+  
+    await prisma.user.delete({
+      where:{
+        id: req.params.id,
+      },
+    });
+  
+    res.status(204).send();
+});
+
+
+
+
 
 app.listen(3000)
