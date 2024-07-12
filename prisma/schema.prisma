@@ -17,7 +17,6 @@ model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
   name      String
-  age       Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  password  String
+  level     Int      @default(1)
 }
