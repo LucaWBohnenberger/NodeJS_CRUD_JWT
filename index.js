@@ -3,13 +3,15 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-
+import ejs from 'ejs';   
+import pdf from 'html-pdf';
+    
 dotenv.config();
 const prisma = new PrismaClient();
 
 const app = express();
-app.use(express.json());
-
+app.use(express.json());  
+ 
 
 //Rota de authenticação
 app.post('/login', async (req, res) => {
@@ -21,8 +23,8 @@ app.post('/login', async (req, res) => {
   
   const userExists = await prisma.user.findUnique({
     where: {
-      email,
-    },
+      email, 
+    }, 
   }); 
 
   if(!userExists) {
@@ -41,7 +43,7 @@ app.post('/login', async (req, res) => {
   res.status(200).json({msg: 'Login successfully', token});
 
 })
-
+ 
 
 //CRUD users
 app.get('/users', async (req, res) => {
@@ -98,7 +100,7 @@ app.post('/users', async (req, res) => {
   res.status(201).json(req.body);
 });
 
-
+ 
 app.put('/users/:id', async (req, res) => {
 
   const { email, password , level, name} = req.body;
@@ -130,9 +132,41 @@ app.delete('/users/:id', async (req, res) => {
         id: req.params.id,
       },
     });
-  
+    
     res.status(204).send();
 });
+
+//Teste 
+app.get('/teste', async (req, res) => {
+  const users = await prisma.user.findMany();
+    
+  ejs.renderFile('print.ejs' , {users}, (err, html) => {
+    if(err) {
+      return res.status(500).json({ msg:'Internal server error'});
+    }
+    
+    const options = {
+      height: '11.25in',
+      width: '8.5in',
+      header:{
+        height: '20mm',
+      },
+      footer:{
+        height: '20mm',
+      }
+    };
+
+    //Create PDF
+    pdf.create(html, options).toFile('report.pdf', (err, data) => {
+      if(err) {
+        return res.status(500).json({ msg:'Internal server error'});
+      }
+
+      res.status(201).json({ msg:'Report created', data});
+    });
+  });
+})
+
 
 //Private route
 app.get('/opa', verifyJWT, async (req, res) => {
@@ -147,8 +181,34 @@ app.get('/opa', verifyJWT, async (req, res) => {
     res.status(401).json({ msg:'Access denied'});
   }
 
-  res.status(201).json({ msg:'Access granted'});
 
+  const users = await prisma.user.findMany();
+    
+  ejs.renderFile('print.ejs' , {users}, (err, html) => {
+    if(err) {
+      return res.status(500).json({ msg:'Internal server error'});
+    }
+    
+    const options = {
+      height: '11.25in',
+      width: '8.5in',
+      header:{
+        height: '20mm',
+      },
+      footer:{
+        height: '20mm',
+      }
+    };
+
+    //Create PDF
+    pdf.create(html, options).toFile('report.pdf', (err, data) => {
+      if(err) {
+        return res.status(500).json({ msg:'Internal server error'});
+      }
+
+      res.status(201).json({ msg:'Report created', data});
+    });
+  });
 
 })
 
